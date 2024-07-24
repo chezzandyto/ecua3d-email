@@ -1,6 +1,9 @@
 package com.ecua3d.email.service;
 
 import com.ecua3d.email.client.ICorporativeClient;
+import com.ecua3d.email.model.EmailLogEntity;
+import com.ecua3d.email.model.enums.EmailDetails;
+import com.ecua3d.email.repository.IEmailRepository;
 import com.ecua3d.email.vo.FilamentToQuoteResponse;
 import com.ecua3d.email.vo.QualityToQuoteResponse;
 import jakarta.mail.MessagingException;
@@ -11,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -25,27 +29,35 @@ import java.util.List;
 @Log4j2
 public class EmailService implements IEmailService{
     @Autowired
+    private IEmailRepository iEmailRepository;
+    @Autowired
     private JavaMailSender javaMailSender;
 
     @Autowired
     private ICorporativeClient iCorporativeClient;
 
-    @Value("${quote.email.company-name}")
+    @Value("${email.data.company-name}")
     String companyName;
-    @Value("${quote.email.contact-number}")
+    @Value("${email.data.contact-number}")
     String contactNumber;
-    @Value("${quote.email.logo-email}")
+    @Value("${email.data.logo-email}")
     String logoEmail;
-    @Value("${quote.email.logo-whatsapp}")
+    @Value("${email.data.logo-whatsapp}")
     String logoWhatsapp;
-    @Value("${quote.email.logo-company}")
+    @Value("${email.data.logo-company}")
     String logoCompany;
-    @Value("${quote.email.mail-company}")
+    @Value("${email.data.mail-company}")
     String mailCompany;
-    @Value("${quote.email.mail-quote}")
+    @Value("${email.data.mail-quote}")
     String mailQuote;
 
-    public void sendEmail(String to, String name, List<String> fileNames) throws MessagingException, IOException {
+    public void sendEmail(Integer emailLogId, Integer quoteId, String to, String name, List<String> fileNames) throws MessagingException, IOException {
+        EmailLogEntity emailEntity = null;
+        if (emailLogId == null) {
+            emailEntity = saveEmail(EmailDetails.toClient,quoteId, EmailDetails.PROCESS,0," ");
+        } else {
+            emailEntity = iEmailRepository.findById(emailLogId).get();
+        }
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
         String content = loadHtmlContent("html/email-template.html");
@@ -54,10 +66,22 @@ public class EmailService implements IEmailService{
         helper.setTo(to);
         helper.setSubject("Cotizacion ecua3D");
         helper.setText(content, true);
-        javaMailSender.send(mimeMessage);
+        Integer chances = emailEntity.getChances()+1;
+        try {
+            javaMailSender.send(mimeMessage);
+            updateEmail(emailEntity, EmailDetails.SENT, chances, emailEntity.getError());
+        } catch (MailException e) {
+            updateEmail(emailEntity, EmailDetails.NOT_SENT, chances, e.getMessage());
+        }
     }
 
-    public void sendEmailToCompany(Integer quoteId, String name, String email, String phone, List<String> fileNames, Integer filamentId, Integer qualityId, String comment) throws MessagingException, IOException {
+    public void sendEmailToCompany(Integer emailLogId, Integer quoteId, String name, String email, String phone, List<String> fileNames, Integer filamentId, Integer qualityId, String comment) throws MessagingException, IOException {
+        EmailLogEntity emailEntity = null;
+        if (emailLogId == null) {
+            emailEntity = saveEmail(EmailDetails.toCompany,quoteId, EmailDetails.PROCESS,0," ");
+        }else {
+            emailEntity = iEmailRepository.findById(emailLogId).get();
+        }
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
         String content = loadHtmlContent("html/email-received-template.html");
@@ -66,7 +90,32 @@ public class EmailService implements IEmailService{
         helper.setTo(mailQuote);
         helper.setSubject("Nueva Cotizacion ecua3D");
         helper.setText(content, true);
-        javaMailSender.send(mimeMessage);
+        Integer chances = emailEntity.getChances()+1;
+        try{
+            javaMailSender.send(mimeMessage);
+
+            updateEmail(emailEntity, EmailDetails.SENT, chances, emailEntity.getError());
+        } catch (MailException e){
+            updateEmail(emailEntity, EmailDetails.NOT_SENT, chances, e.getMessage());
+        }
+    }
+
+    private EmailLogEntity saveEmail(EmailDetails typeEmail, Integer quoteId, EmailDetails status, Integer chances, String error){
+        EmailLogEntity newEntity = new EmailLogEntity();
+        newEntity.setTypeEmail(String.valueOf(typeEmail));
+        newEntity.setQuoteId(quoteId);
+        newEntity.setStatusEmail(String.valueOf(status));
+        newEntity.setChances(chances);
+        newEntity.setError(error);
+        iEmailRepository.save(newEntity);
+        return newEntity;
+    }
+
+    private void updateEmail(EmailLogEntity entity, EmailDetails status, Integer chances, String error){
+        entity.setStatusEmail(String.valueOf(status));
+        entity.setChances(chances);
+        entity.setError(error);
+        iEmailRepository.save(entity);
     }
 
     private String loadHtmlContent(String filePath) throws IOException {

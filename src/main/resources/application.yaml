@@ -61,8 +61,8 @@ cloud:
     bucketName: ${BUCKET-NAME}
     base-folder: ${BASE-FOLDER}
 
-quote:
-  email:
+email:
+  data:
     company-name: ${EMAIL-COMPANY-NAME}
     contact-number: ${EMAIL-CONTACT-NUMBER}
     logo-email: https://efuoxyi.stripocdn.email/content/guids/CABINET_ee77850a5a9f3068d9355050e69c76d26d58c3ea2927fa145f0d7a894e624758/images/group_4076323.png
@@ -70,7 +70,17 @@ quote:
     logo-company: https://media.licdn.com/dms/image/D4E0BAQEJsKbbDucFCw/company-logo_200_200/0/1694219859503?e=2147483647&v=beta&t=fcHRWqd_HTQkmnwbzmK71zHq1guWEEXD4dicfr9DEcs
     mail-company: ${EMAIL-COMPANY-MAIL}
     mail-quote: ${EMAIL-QUOTE-MAIL}
-  url:
-    corporative: ${URL-CORPORATIVE}
+  services:
+    corporative:
+      url: ${URL-CORPORATIVE}
+    quote:
+      url: ${URL-QUOTE}
 
+keycloak:
+  auth-server-url: http://192.168.100.17:8080
+  realm: ${REALM}
+  type: ${TYPE}
+  resource: ${CLIENT-ID}
+  credentials:
+    secret: ${CLIENT-SECRET}
 
