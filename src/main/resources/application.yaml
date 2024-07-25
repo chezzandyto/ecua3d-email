@@ -1,0 +1,86 @@
+server:
+  servlet:
+    context-path: /email
+  port: 9002
+spring:
+  datasource:
+    url: jdbc:postgresql://192.168.100.17:5432/ecua3d
+    username: postgres
+    password: homeassistant
+  jpa:
+    show-sql: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://192.168.100.17:8080/realms/ecua3d
+          jwt-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 30MB
+  mail:
+    debug: true
+    default-encoding: UTF-8
+    host: smtp.mailgun.org
+    port: 2525
+    username: ${MAIL-USER-NAME}
+    password: ${MAIL-PASSWORD}
+    smtp:
+      auth: true
+      starttls:
+        enable: true
+        connectiontimeout: 4000
+        timeout: 4000
+        writetimeout: 4000
+  thymeleaf:
+    prefix:
+      classpath: /templates-emails/
+    suffix: .html
+  kafka:
+    boostrap-servers:
+      localhost: 9092
+    consumer:
+      group-id: email-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+token:
+  converter:
+    principal-attribute: preferred_username
+    resource-id: demo-app
+
+cloud:
+  aws:
+    credentials:
+      access-key: ${ACCESS-KEY}
+      secret-key: ${SECRET-KEY}
+    region:
+      static: ${REGION}
+    bucketName: ${BUCKET-NAME}
+    base-folder: ${BASE-FOLDER}
+
+email:
+  data:
+    company-name: ${EMAIL-COMPANY-NAME}
+    contact-number: ${EMAIL-CONTACT-NUMBER}
+    logo-email: https://efuoxyi.stripocdn.email/content/guids/CABINET_ee77850a5a9f3068d9355050e69c76d26d58c3ea2927fa145f0d7a894e624758/images/group_4076323.png
+    logo-whatsapp: https://e7.pngegg.com/pngimages/621/882/png-clipart-whatsapp-email-message-computer-icons-whatsapp-multimedia-messaging-service-logo.png
+    logo-company: https://media.licdn.com/dms/image/D4E0BAQEJsKbbDucFCw/company-logo_200_200/0/1694219859503?e=2147483647&v=beta&t=fcHRWqd_HTQkmnwbzmK71zHq1guWEEXD4dicfr9DEcs
+    mail-company: ${EMAIL-COMPANY-MAIL}
+    mail-quote: ${EMAIL-QUOTE-MAIL}
+  services:
+    corporative:
+      url: ${URL-CORPORATIVE}
+    quote:
+      url: ${URL-QUOTE}
+
+keycloak:
+  auth-server-url: http://192.168.100.17:8080
+  realm: ${REALM}
+  type: ${TYPE}
+  resource: ${CLIENT-ID}
+  credentials:
+    secret: ${CLIENT-SECRET}
+
